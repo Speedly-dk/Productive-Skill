@@ -1,7 +1,7 @@
 {
   "name": "productive-skill-marketplace",
   "owner": {
-    "name": "Kristian Primdal"
+    "name": "Speedly"
   },
   "plugins": [
     {
@@ -9,7 +9,7 @@
       "description": "One-click install for Productive.io Skills + a local Productive MCP server.",
       "source": {
         "source": "github",
-        "repo": "kprimdal/Productive-Skill"
+        "repo": "Speedly-dk/Productive-Skill"
       }
     }
   ]

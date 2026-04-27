@@ -4,7 +4,7 @@
       "command": "uvx",
       "args": [
         "--from",
-        "git+https://github.com/kprimdal/Productive-Skill.git#subdirectory=mcp_server",
+        "git+https://github.com/Speedly-dk/Productive-Skill.git#subdirectory=mcp_server",
         "productive-mcp"
       ],
       "env": {

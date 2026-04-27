@@ -12,7 +12,7 @@ A Claude Code plugin that bundles a local Productive.io MCP server, slash comman
 
 ```bash
 # 1. Add this plugin's marketplace
-/plugin marketplace add kprimdal/Productive-Skill
+/plugin marketplace add Speedly-dk/Productive-Skill
 
 # 2. Install the plugin
 /plugin install productive-workspace-plugin@productive-skill-marketplace
