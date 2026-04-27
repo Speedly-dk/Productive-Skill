@@ -1,74 +1,32 @@
 """MCP server bootstrap.
 
-Registers the operational ``productive_health`` tool. Resource tools land
-in U3/U4 and register through ``register_tools(mcp, client)``.
+Tool registration lives in ``productive_mcp.tools``: each module imports
+``mcp`` from ``tools._registry`` and decorates its functions with
+``@mcp.tool()``. This file imports each tool module to trigger the
+side-effecting registration, then runs ``mcp`` over stdio.
 """
 
 from __future__ import annotations
 
 import os
 
-from mcp.server.fastmcp import FastMCP
-
-from productive_mcp.client import (
-    BASE_URL,
-    ConfigError,
-    ProductiveAPIError,
-    ProductiveClient,
+# Importing the tool modules registers their @mcp.tool decorators against
+# the shared FastMCP instance. The noqa marker keeps linters from
+# stripping these "unused" imports.
+from productive_mcp.tools import (  # noqa: F401
+    companies,
+    deals,
+    health,
+    people,
+    services,
+    tasks,
+    time_entries,
 )
-
-mcp = FastMCP("productive")
-
-
-def _build_client() -> ProductiveClient:
-    return ProductiveClient()
-
-
-@mcp.tool()
-async def productive_health() -> dict[str, object]:
-    """Verify the Productive MCP server can reach the API.
-
-    Returns a small dict describing the configured organization, the base
-    URL, and a hint about whether the current token has read-write access.
-    Use this as a pre-flight check after install.
-    """
-    try:
-        client = _build_client()
-    except ConfigError as exc:
-        return {"ok": False, "error": str(exc)}
-
-    async with client:
-        token_scope_hint = "unknown"
-        try:
-            await client.get("/people/me", max_results=1)
-            token_scope_hint = "valid"
-        except ProductiveAPIError as exc:
-            return {
-                "ok": False,
-                "organization_id": client.organization_id,
-                "base_url": client.base_url,
-                "error": str(exc),
-            }
-
-        return {
-            "ok": True,
-            "organization_id": client.organization_id,
-            "base_url": client.base_url,
-            "token_scope_hint": token_scope_hint,
-            "version": _read_version(),
-        }
-
-
-def _read_version() -> str:
-    from productive_mcp import __version__
-
-    return __version__
+from productive_mcp.tools._registry import mcp
 
 
 def main() -> None:
     """Entry point for ``productive-mcp``. Runs over stdio."""
-    # Surface configuration problems before starting the transport so users
-    # see the env-var error rather than an opaque "server died" message.
     missing = [
         name
         for name in ("PRODUCTIVE_API_TOKEN", "PRODUCTIVE_ORGANIZATION_ID")
