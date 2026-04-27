@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "productive": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/kprimdal/Productive-Skill.git#subdirectory=mcp_server",
+        "productive-mcp"
+      ],
+      "env": {
+        "PRODUCTIVE_API_TOKEN": "${PRODUCTIVE_API_TOKEN}",
+        "PRODUCTIVE_ORGANIZATION_ID": "${PRODUCTIVE_ORGANIZATION_ID}"
+      }
+    }
+  }
+}

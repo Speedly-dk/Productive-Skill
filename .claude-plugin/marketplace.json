@@ -1,0 +1,16 @@
+{
+  "name": "productive-skill-marketplace",
+  "owner": {
+    "name": "Kristian Primdal"
+  },
+  "plugins": [
+    {
+      "name": "productive-workspace-plugin",
+      "description": "One-click install for Productive.io Skills + a local Productive MCP server.",
+      "source": {
+        "source": "github",
+        "repo": "kprimdal/Productive-Skill"
+      }
+    }
+  ]
+}
