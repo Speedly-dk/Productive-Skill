@@ -20,6 +20,9 @@ htmlcov/
 venv/
 env/
 
+# uv
+uv.lock
+
 # Build artifacts
 build/
 dist/
