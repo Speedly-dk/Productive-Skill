@@ -145,3 +145,164 @@ async def test_search_propagates_api_errors():
             )
 
     assert excinfo.value.status == 401
+
+
+# -- write paths -----------------------------------------------------------
+
+
+async def test_create_posts_correct_jsonapi_document():
+    captured: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        import json
+
+        if request.method == "POST":
+            captured.append(json.loads(request.content))
+            return httpx.Response(
+                201,
+                json={
+                    "data": {
+                        "id": "999",
+                        "type": "time_entries",
+                        "attributes": {
+                            "date": "2026-04-15",
+                            "time": 60,
+                            "billable_time": 60,
+                        },
+                        "relationships": {},
+                    }
+                },
+            )
+        return httpx.Response(404)
+
+    async with make_client(handler) as client:
+        result = await time_entries._create(
+            client,
+            date="2026-04-15",
+            person_id="1",
+            service_id="100",
+            minutes=60,
+            billable_minutes=60,
+            note="Worked on X",
+            task_id="9",
+        )
+
+    assert result["id"] == "999"
+    payload = captured[0]
+    assert payload["data"]["type"] == "time_entries"
+    assert payload["data"]["attributes"]["date"] == "2026-04-15"
+    assert payload["data"]["attributes"]["time"] == 60
+    assert payload["data"]["attributes"]["billable_time"] == 60
+    assert payload["data"]["attributes"]["note"] == "Worked on X"
+    assert payload["data"]["relationships"]["person"]["data"]["id"] == "1"
+    assert payload["data"]["relationships"]["service"]["data"]["id"] == "100"
+    assert payload["data"]["relationships"]["task"]["data"]["id"] == "9"
+
+
+async def test_create_zero_minutes_rejected_before_http():
+    """No HTTP request should be made when validation fails."""
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        return httpx.Response(201, json={"data": {}})
+
+    async with make_client(handler) as client:
+        with pytest.raises(ValueError, match="minutes"):
+            await time_entries._create(
+                client,
+                date="2026-04-15",
+                person_id="1",
+                service_id="100",
+                minutes=0,
+            )
+
+    assert calls["n"] == 0
+
+
+async def test_create_missing_required_fields_rejected_before_http():
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        return httpx.Response(201, json={"data": {}})
+
+    async with make_client(handler) as client:
+        with pytest.raises(ValueError, match="person_id"):
+            await time_entries._create(
+                client,
+                date="2026-04-15",
+                person_id="",
+                service_id="100",
+                minutes=60,
+            )
+
+    assert calls["n"] == 0
+
+
+async def test_create_with_read_only_token_surfaces_403():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            403,
+            text='{"errors":[{"detail":"This token is read-only"}]}',
+        )
+
+    async with make_client(handler) as client:
+        with pytest.raises(ProductiveAPIError) as excinfo:
+            await time_entries._create(
+                client,
+                date="2026-04-15",
+                person_id="1",
+                service_id="100",
+                minutes=60,
+            )
+
+    assert "read-only" in str(excinfo.value)
+
+
+async def test_update_patches_only_supplied_fields():
+    captured: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        import json
+
+        if request.method == "PATCH":
+            captured.append(json.loads(request.content))
+            return httpx.Response(
+                200,
+                json={
+                    "data": {
+                        "id": "999",
+                        "type": "time_entries",
+                        "attributes": {"note": "Updated"},
+                        "relationships": {},
+                    }
+                },
+            )
+        return httpx.Response(404)
+
+    async with make_client(handler) as client:
+        result = await time_entries._update(
+            client,
+            entry_id="999",
+            fields={"note": "Updated"},
+        )
+
+    assert result["note"] == "Updated"
+    payload = captured[0]
+    assert payload["data"]["id"] == "999"
+    assert payload["data"]["attributes"] == {"note": "Updated"}
+
+
+async def test_update_requires_at_least_one_field():
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        return httpx.Response(200, json={"data": {}})
+
+    async with make_client(handler) as client:
+        with pytest.raises(ValueError):
+            await time_entries._update(client, entry_id="999", fields={})
+
+    assert calls["n"] == 0
