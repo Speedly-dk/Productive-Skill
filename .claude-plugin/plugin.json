@@ -1,5 +1,5 @@
 {
-  "name": "productive-workspace-plugin",
+  "name": "productive",
   "version": "0.1.0",
   "description": "Productive.io Skills + a local Productive MCP server packaged as a Claude Code plugin.",
   "author": {
