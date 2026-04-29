@@ -22,7 +22,7 @@ async def productive_health() -> dict[str, object]:
 
     async with client:
         try:
-            await client.get("/people/me", max_results=1)
+            await client.get("/companies", max_results=1)
         except ProductiveAPIError as exc:
             return {
                 "ok": False,
